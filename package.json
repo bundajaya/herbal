@@ -1,7 +1,7 @@
 {
   "name": "xrezzky-api",
   "version": "1.0.0",
-  "description": "XREZZKY OFFICIAL STORE — Vercel Serverless API",
+  "description": "XREZZKY OFFICIAL  — Vercel Serverless API",
   "main": "index.js",
   "scripts": {
     "dev": "vercel dev"
