@@ -232,7 +232,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="font-bold text-green-700 text-sm">${formatRp(o.total)}</span>
-                        <button onclick="bukaKonfirmasi('${o._id}','${o.kode}',${o.total},'${o.nama}')" class="btn btn-green btn-sm">Konfirmasi</button>
+                        <button onclick="bukaKonfirmasi('${o._id}','${escAttr(o.kode)}',${o.total},'${escAttr(o.nama)}')" class="btn btn-green btn-sm">Konfirmasi</button>
                     </div>
                 </div>`).join('');
         });
@@ -288,7 +288,7 @@
                 <td>
                     <div class="flex gap-1">
                         <button onclick="lihatDetailPesanan('${o._id}')" class="btn btn-outline btn-icon btn-sm" title="Detail"><i class="fas fa-eye"></i></button>
-                        ${o.status==='menunggu-pembayaran'?`<button onclick="bukaKonfirmasi('${o._id}','${o.kode}',${o.total},'${o.nama}')" class="btn btn-green btn-icon btn-sm" title="Konfirmasi"><i class="fas fa-check"></i></button>`:''}
+                        ${o.status==='menunggu-pembayaran'?`<button onclick="bukaKonfirmasi('${o._id}','${escAttr(o.kode)}',${o.total},'${escAttr(o.nama)}')" class="btn btn-green btn-icon btn-sm" title="Konfirmasi"><i class="fas fa-check"></i></button>`:''}
                         <button onclick="lihatRiwayat('${o._id}')" class="btn btn-outline btn-icon btn-sm" title="Riwayat"><i class="fas fa-history"></i></button>
                         <button onclick="hapusPesanan('${o._id}')" class="btn btn-red btn-icon btn-sm" title="Hapus"><i class="fas fa-trash"></i></button>
                     </div>
@@ -358,7 +358,7 @@
                 </div>` : ''}
                 <div class="flex gap-2">
                     <a href="https://wa.me/${formatWA(o.wa)}" target="_blank" class="flex-1 btn btn-green btn-sm justify-center"><i class="fab fa-whatsapp"></i> Chat WA</a>
-                    ${o.status==='menunggu-pembayaran'?`<button onclick="bukaKonfirmasi('${id}','${o.kode}',${o.total},'${o.nama}')" class="flex-1 btn btn-yellow btn-sm justify-center"><i class="fas fa-check"></i> Konfirmasi</button>`:''}
+                    ${o.status==='menunggu-pembayaran'?`<button onclick="bukaKonfirmasi('${id}','${escAttr(o.kode)}',${o.total},'${escAttr(o.nama)}')" class="flex-1 btn btn-yellow btn-sm justify-center"><i class="fas fa-check"></i> Konfirmasi</button>`:''}
                 </div>`;
             document.getElementById('detailModal').classList.add('show');
         });
@@ -407,6 +407,12 @@
     }
 
     // ===== PRODUK =====
+    // Escape string yang di-inject ke dalam onclick="..." biar apostrof/kutip
+    // di nama pelanggan gak bikin string JS-nya pecah
+    function escAttr(str) {
+        return String(str ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
     // ===== CLOUDINARY CONFIG =====
     const CLOUDINARY_CLOUD = 'uorsiujb';
     const CLOUDINARY_PRESET = 'Herbal.Unsigned';
@@ -725,7 +731,7 @@
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-red-600"><i class="fas fa-hourglass-half mr-1"></i>${sisaText}</span>
-                        <button onclick="bukaKonfirmasi('${o._id}','${o.kode}',${o.total},'${o.nama}')" class="btn btn-green btn-sm">
+                        <button onclick="bukaKonfirmasi('${o._id}','${escAttr(o.kode)}',${o.total},'${escAttr(o.nama)}')" class="btn btn-green btn-sm">
                             <i class="fas fa-check"></i> Konfirmasi
                         </button>
                     </div>
@@ -755,7 +761,7 @@
                     <p class="text-sm"><strong>Total:</strong> ${formatRp(order.total)}</p>
                     <p class="text-sm"><strong>Status:</strong> ${getStatusLabel(order.status)}</p>
                     ${order.status === 'menunggu-pembayaran' ? `
-                    <button onclick="bukaKonfirmasi('${orderId}','${order.kode}',${order.total},'${order.nama}')" class="btn btn-green mt-3 w-full justify-center">
+                    <button onclick="bukaKonfirmasi('${orderId}','${escAttr(order.kode)}',${order.total},'${escAttr(order.nama)}')" class="btn btn-green mt-3 w-full justify-center">
                         <i class="fas fa-check-circle"></i> Konfirmasi Pembayaran
                     </button>` : '<p class="text-amber-600 text-sm mt-2">⚠️ Pesanan ini sudah dikonfirmasi atau tidak dalam status menunggu</p>'}
                 </div>`;
@@ -796,6 +802,14 @@
         try {
             const snap = await db.ref('pesanan/' + orderId).once('value');
             const order = snap.val();
+
+            if (!order) {
+                showToast('❌ Pesanan tidak ditemukan (mungkin sudah dihapus)', 'error');
+                document.getElementById('konfirmasiModal').classList.remove('show');
+                loadKonfirmasiList();
+                loadDashboard();
+                return;
+            }
 
             if(order.status !== 'menunggu-pembayaran') {
                 showToast('Pesanan sudah dikonfirmasi atau tidak valid', 'error');
